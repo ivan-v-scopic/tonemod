@@ -200,6 +200,10 @@ export class Player extends Source<PlayerOptions> {
 	 * @param  duration How long the sample should play. If no duration is given, it will default to the full length of the sample (minus any offset)
 	 */
 	start(time?: Time, offset?: Time, duration?: Time): this {
+		this._startTime = this.toSeconds(time);
+		this._offset = this.toSeconds(offset);
+		this._duration = this.toSeconds(duration);
+
 		super.start(time, offset, duration);
 		return this;
 	}
@@ -218,7 +222,6 @@ export class Player extends Source<PlayerOptions> {
 
 		// compute the values in seconds
 		const computedOffset = this.toSeconds(offset);
-		this._offset = computedOffset;
 
 		// compute the duration which is either the passed in duration of the buffer.duration - offset
 		const origDuration = duration;
@@ -230,11 +233,9 @@ export class Player extends Source<PlayerOptions> {
 
 		// scale it by the playback rate
 		computedDuration = computedDuration / this._playbackRate;
-		this._duration = computedDuration;
 
 		// get the start time
 		startTime = this.toSeconds(startTime);
-		this._startTime = startTime;
 
 		// make the source
 		const source = new ToneBufferSource({
