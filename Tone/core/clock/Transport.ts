@@ -608,6 +608,22 @@ export class TransportClass
 		const ticks = this._clock.frequency.timeToTicks(s, now);
 		this.ticks = ticks;
 	}
+	/**
+	 * Set seconds position with preparation
+	 * @param s The position in seconds
+	 * @param prepareCallback Optional callback to prepare audio
+	 */
+	async setSeconds(
+		s: Seconds, 
+		prepareCallback?: (seconds: number) => Promise<void>
+	): Promise<void> {
+		if (prepareCallback) {
+			await prepareCallback(s);
+		}
+		const now = this.now();
+		const ticks = this._clock.frequency.timeToTicks(s, now);
+		this.ticks = ticks;
+	}
 
 	/**
 	 * The Transport's loop position as a normalized value. Always
