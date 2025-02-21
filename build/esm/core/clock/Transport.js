@@ -456,6 +456,9 @@ export class TransportClass extends ToneWithContext {
      */
     setSeconds(s, prepareCallback) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this._currentPreparePromise) {
+                yield this._currentPreparePromise;
+            }
             // create and store the promise
             this._currentPreparePromise = (() => __awaiter(this, void 0, void 0, function* () {
                 if (prepareCallback) {
