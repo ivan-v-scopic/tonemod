@@ -634,6 +634,10 @@ export class TransportClass
 		s: Seconds, 
 		prepareCallback?: (seconds: number) => Promise<void>
 	): Promise<void> {
+		if (this._currentPreparePromise) {
+			await this._currentPreparePromise;
+		}
+
 		// create and store the promise
 		this._currentPreparePromise = (async () => {
 			if (prepareCallback) {
