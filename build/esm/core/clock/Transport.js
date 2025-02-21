@@ -1,3 +1,4 @@
+import { __awaiter } from "tslib";
 import { TimeClass } from "../../core/type/Time.js";
 import { TimelineValue } from "../../core/util/TimelineValue.js";
 import { Pow } from "../../signal/Pow.js";
@@ -431,6 +432,21 @@ export class TransportClass extends ToneWithContext {
         const now = this.now();
         const ticks = this._clock.frequency.timeToTicks(s, now);
         this.ticks = ticks;
+    }
+    /**
+     * Set seconds position with preparation
+     * @param s The position in seconds
+     * @param prepareCallback Optional callback to prepare audio
+     */
+    setSeconds(s, prepareCallback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (prepareCallback) {
+                yield prepareCallback(s);
+            }
+            const now = this.now();
+            const ticks = this._clock.frequency.timeToTicks(s, now);
+            this.ticks = ticks;
+        });
     }
     /**
      * The Transport's loop position as a normalized value. Always

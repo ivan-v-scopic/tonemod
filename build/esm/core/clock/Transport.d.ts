@@ -262,6 +262,12 @@ export declare class TransportClass extends ToneWithContext<TransportOptions> im
     get seconds(): Seconds;
     set seconds(s: Seconds);
     /**
+     * Set seconds position with preparation
+     * @param s The position in seconds
+     * @param prepareCallback Optional callback to prepare audio
+     */
+    setSeconds(s: Seconds, prepareCallback?: (seconds: number) => Promise<void>): Promise<void>;
+    /**
      * The Transport's loop position as a normalized value. Always
      * returns 0 if the Transport.loop = false.
      */
