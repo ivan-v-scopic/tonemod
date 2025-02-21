@@ -153,6 +153,11 @@ export class TransportClass
 	//-------------------------------------
 
 	/**
+	 * The current audio preparation Promise.
+	 */
+	private _currentPreparePromise: Promise<void> | null = null;
+
+	/**
 	 * All the events in an object to keep track by ID
 	 */
 	private _scheduledEvents = {};
@@ -443,6 +448,18 @@ export class TransportClass
 	 * Tone.getTransport().start("+1", "4:0:0");
 	 */
 	start(time?: Time, offset?: TransportTime): this {
+		// ensure all audio is prepared before starting
+		if (this._currentPreparePromise) {
+			this._currentPreparePromise.then(() => {
+				this._start(time, offset);
+			});
+		} else {
+			this._start(time, offset);
+		}
+		return this;
+	}
+
+	private _start(time?: Time, offset?: TransportTime): this {
 		// start the context
 		this.context.resume();
 		let offsetTicks;
@@ -617,12 +634,21 @@ export class TransportClass
 		s: Seconds, 
 		prepareCallback?: (seconds: number) => Promise<void>
 	): Promise<void> {
-		if (prepareCallback) {
-			await prepareCallback(s);
+		// create and store the promise
+		this._currentPreparePromise = (async () => {
+			if (prepareCallback) {
+				await prepareCallback(s);
+			}
+			const now = this.now();
+			const ticks = this._clock.frequency.timeToTicks(s, now);
+			this.ticks = ticks;
+		})();
+
+		try {
+			await this._currentPreparePromise;
+		} finally {
+			this._currentPreparePromise = null;
 		}
-		const now = this.now();
-		const ticks = this._clock.frequency.timeToTicks(s, now);
-		this.ticks = ticks;
 	}
 
 	/**
