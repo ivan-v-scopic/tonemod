@@ -63,6 +63,10 @@ export class TransportClass extends ToneWithContext {
         // 	TIMELINE EVENTS
         //-------------------------------------
         /**
+         * The current audio preparation Promise.
+         */
+        this._currentPreparePromise = null;
+        /**
          * All the events in an object to keep track by ID
          */
         this._scheduledEvents = {};
@@ -283,6 +287,18 @@ export class TransportClass extends ToneWithContext {
      * Tone.getTransport().start("+1", "4:0:0");
      */
     start(time, offset) {
+        // ensure all audio is prepared before starting
+        if (this._currentPreparePromise) {
+            this._currentPreparePromise.then(() => {
+                this._start(time, offset);
+            });
+        }
+        else {
+            this._start(time, offset);
+        }
+        return this;
+    }
+    _start(time, offset) {
         // start the context
         this.context.resume();
         let offsetTicks;
@@ -440,12 +456,21 @@ export class TransportClass extends ToneWithContext {
      */
     setSeconds(s, prepareCallback) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (prepareCallback) {
-                yield prepareCallback(s);
+            // create and store the promise
+            this._currentPreparePromise = (() => __awaiter(this, void 0, void 0, function* () {
+                if (prepareCallback) {
+                    yield prepareCallback(s);
+                }
+                const now = this.now();
+                const ticks = this._clock.frequency.timeToTicks(s, now);
+                this.ticks = ticks;
+            }))();
+            try {
+                yield this._currentPreparePromise;
             }
-            const now = this.now();
-            const ticks = this._clock.frequency.timeToTicks(s, now);
-            this.ticks = ticks;
+            finally {
+                this._currentPreparePromise = null;
+            }
         });
     }
     /**

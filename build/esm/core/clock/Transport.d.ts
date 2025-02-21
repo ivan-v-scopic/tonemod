@@ -82,6 +82,10 @@ export declare class TransportClass extends ToneWithContext<TransportOptions> im
      */
     private _timeSignature;
     /**
+     * The current audio preparation Promise.
+     */
+    private _currentPreparePromise;
+    /**
      * All the events in an object to keep track by ID
      */
     private _scheduledEvents;
@@ -184,6 +188,7 @@ export declare class TransportClass extends ToneWithContext<TransportOptions> im
      * Tone.getTransport().start("+1", "4:0:0");
      */
     start(time?: Time, offset?: TransportTime): this;
+    private _start;
     /**
      * Stop the transport and all sources synced to the transport.
      * @param time The time when the transport should stop.
