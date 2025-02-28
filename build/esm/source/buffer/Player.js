@@ -7,6 +7,7 @@ import { Source } from "../Source.js";
 import { ToneBufferSource } from "./ToneBufferSource.js";
 import { assertRange } from "../../core/util/Debug.js";
 import { timeRange } from "../../core/util/Decorator.js";
+import { assert } from "../../core/util/Debug.js";
 /**
  * Player is an audio file player with start, loop, and stop functions.
  * @example
@@ -158,6 +159,15 @@ export class Player extends Source {
         // add it to the array of active sources
         // this.log("player._activeSources.add", this._id);
         this._activeSources.add(source);
+        if (!this.loaded) {
+            const info = {
+                playerId: this._id,
+                startTime: this.startTime,
+                duration: this.duration,
+                tag: this.debugTag,
+            };
+            assert(false, `Buffer not loaded for player ${info}`);
+        }
         // start it
         if (this._loop && isUndef(origDuration)) {
             source.start(startTime, computedOffset);
@@ -365,6 +375,15 @@ export class Player extends Source {
      */
     get duration() {
         return this._duration;
+    }
+    /**
+     * The tag for easier debugging
+     */
+    get debugTag() {
+        return this._debugTag;
+    }
+    set debugTag(tag) {
+        this._debugTag = tag;
     }
     dispose() {
         super.dispose();

@@ -16,6 +16,7 @@ export interface PlayerOptions extends SourceOptions {
     startTime?: Seconds;
     offset?: Seconds;
     duration?: Seconds;
+    debugTag?: string;
 }
 /**
  * Player is an audio file player with start, loop, and stop functions.
@@ -48,6 +49,10 @@ export declare class Player extends Source<PlayerOptions> {
      * The duration to play for
      */
     private _duration?;
+    /**
+     * The tag for easier debugging
+     */
+    private _debugTag?;
     /**
      * if the buffer should loop once it's over
      */
@@ -214,5 +219,10 @@ export declare class Player extends Source<PlayerOptions> {
      * Get the playback duration
      */
     get duration(): Seconds | undefined;
+    /**
+     * The tag for easier debugging
+     */
+    get debugTag(): string | undefined;
+    set debugTag(tag: string | undefined);
     dispose(): this;
 }
