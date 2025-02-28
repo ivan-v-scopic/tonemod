@@ -7,6 +7,7 @@ import { Source, SourceOptions } from "../Source.js";
 import { ToneBufferSource } from "./ToneBufferSource.js";
 import { assertRange } from "../../core/util/Debug.js";
 import { timeRange } from "../../core/util/Decorator.js";
+import { assert } from "../../core/util/Debug.js";
 
 export interface PlayerOptions extends SourceOptions {
 	onload: () => void;
@@ -23,6 +24,7 @@ export interface PlayerOptions extends SourceOptions {
 	startTime?: Seconds;
 	offset?: Seconds;
 	duration?: Seconds;
+	debugTag?: string;
 }
 
 /**
@@ -61,6 +63,11 @@ export class Player extends Source<PlayerOptions> {
 	 * The duration to play for
 	 */
 	private _duration?: Seconds;
+
+	/**
+	 * The tag for easier debugging
+	 */
+	private _debugTag?: string;
 
 	/**
 	 * if the buffer should loop once it's over
@@ -267,6 +274,16 @@ export class Player extends Source<PlayerOptions> {
 		// add it to the array of active sources
 		// this.log("player._activeSources.add", this._id);
 		this._activeSources.add(source);
+
+		if (!this.loaded) {
+			const info = {
+				playerId: this._id,
+				startTime: this.startTime,
+				duration: this.duration,
+				tag: this.debugTag,
+			};
+			assert(false, `Buffer not loaded for player ${info}`);
+		}
 
 		// start it
 		if (this._loop && isUndef(origDuration)) {
@@ -494,6 +511,16 @@ export class Player extends Source<PlayerOptions> {
 	 */
 	get duration(): Seconds | undefined {
 		return this._duration;
+	}
+
+	/**
+	 * The tag for easier debugging
+	 */
+	get debugTag(): string | undefined {
+		return this._debugTag;
+	}
+	set debugTag(tag: string | undefined) {
+		this._debugTag = tag;
 	}
 
 	dispose(): this {
