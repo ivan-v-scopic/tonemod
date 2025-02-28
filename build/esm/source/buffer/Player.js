@@ -166,7 +166,7 @@ export class Player extends Source {
                 duration: this.duration,
                 tag: this.debugTag,
             };
-            assert(false, `Buffer not loaded for player ${info}`);
+            assert(false, `Buffer not loaded for player ${JSON.stringify(info, null, 2)}`);
         }
         // start it
         if (this._loop && isUndef(origDuration)) {
