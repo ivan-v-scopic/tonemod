@@ -37,14 +37,6 @@ export declare class TransportEvent {
      */
     protected _remainderTime: number;
     /**
-     * Tracks the last time this event was invoked to prevent duplicate firings
-     */
-    private _lastInvokedTime;
-    /**
-     * The minimum time in seconds that must pass before allowing an event to be invoked again
-     */
-    private _dedupThreshold;
-    /**
      * @param transport The transport object which the event belongs to
      */
     constructor(transport: Transport, opts: Partial<TransportEventOptions>);
