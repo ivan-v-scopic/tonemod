@@ -77,18 +77,6 @@ export declare abstract class Source<Options extends SourceOptions> extends Tone
      */
     private _syncedStart;
     private _syncedStop;
-    /**
-     * Track the last start time to prevent rapid restarts
-     */
-    private _lastStartTime;
-    /**
-     * Threshold in seconds for preventing rapid restarts (50ms)
-     */
-    private _restartThreshold;
-    /**
-     * Track how many rapid restarts have been prevented
-     */
-    private _preventedRestarts;
     constructor(options: SourceOptions);
     static getDefaults(): SourceOptions;
     set id(id: string);
@@ -143,15 +131,19 @@ export declare abstract class Source<Options extends SourceOptions> extends Tone
      */
     restart(time?: Time, offset?: Time, duration?: Time): this;
     /**
-     * Sync the source to the Transport timeline
-     * so that it plays automatically when the transport
-     * is started
+     * Sync the source to the Transport so that all subsequent
+     * calls to `start` and `stop` are synced to the TransportTime
+     * instead of the AudioContext time.
+     *
      * @example
-     * const player = new Tone.Player("https://tonejs.github.io/audio/loop/drums.mp3").toDestination();
-     * // sync the source to start when the transport does
-     * player.sync();
-     * // start the transport
-     * Tone.getTransport().start();
+     * const osc = new Tone.Oscillator().toDestination();
+     * // sync the source so that it plays between 0 and 0.3 on the Transport's timeline
+     * osc.sync().start(0).stop(0.3);
+     * // start the transport.
+     * Tone.Transport.start();
+     * // set it to loop once a second
+     * Tone.Transport.loop = true;
+     * Tone.Transport.loopEnd = 1;
      */
     sync(): this;
     /**
