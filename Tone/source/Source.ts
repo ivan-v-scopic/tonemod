@@ -108,21 +108,6 @@ export abstract class Source<
 	private _syncedStart: (time: Seconds, offset: Seconds) => void = noOp;
 	private _syncedStop: (time: Seconds) => void = noOp;
 
-	/**
-	 * Track the last start time to prevent rapid restarts
-	 */
-	private _lastStartTime: number = -Infinity;
-
-	/**
-	 * Threshold in seconds for preventing rapid restarts (50ms)
-	 */
-	private _restartThreshold: number = 0.05;
-
-	/**
-	 * Track how many rapid restarts have been prevented
-	 */
-	private _preventedRestarts: number = 0;
-
 	constructor(options: SourceOptions) {
 		super(options);
 		this._state.memory = 100;
@@ -226,17 +211,6 @@ export abstract class Source<
 				? this.context.transport.seconds
 				: this.toSeconds(time);
 		computedTime = this._clampToCurrentTime(computedTime);
-
-		// Check if this is a rapid restart (within threshold)
-		const now = this.now();
-		if (computedTime - this._lastStartTime < this._restartThreshold) {
-			console.log(`[Tone][Source] Preventing rapid restart at ${computedTime.toFixed(6)}, last start: ${this._lastStartTime.toFixed(6)} (prevented count: ${++this._preventedRestarts})`);
-			return this;
-		}
-
-		// Track the start time
-		this._lastStartTime = computedTime;
-
 		// if it's started, stop it and restart it
 		if (
 			!this._synced &&
@@ -349,15 +323,19 @@ export abstract class Source<
 	}
 
 	/**
-	 * Sync the source to the Transport timeline 
-	 * so that it plays automatically when the transport
-	 * is started
+	 * Sync the source to the Transport so that all subsequent
+	 * calls to `start` and `stop` are synced to the TransportTime
+	 * instead of the AudioContext time.
+	 *
 	 * @example
-	 * const player = new Tone.Player("https://tonejs.github.io/audio/loop/drums.mp3").toDestination();
-	 * // sync the source to start when the transport does
-	 * player.sync();
-	 * // start the transport
-	 * Tone.getTransport().start();
+	 * const osc = new Tone.Oscillator().toDestination();
+	 * // sync the source so that it plays between 0 and 0.3 on the Transport's timeline
+	 * osc.sync().start(0).stop(0.3);
+	 * // start the transport.
+	 * Tone.Transport.start();
+	 * // set it to loop once a second
+	 * Tone.Transport.loop = true;
+	 * Tone.Transport.loopEnd = 1;
 	 */
 	sync(): this {
 		if (!this._synced) {
@@ -381,38 +359,16 @@ export abstract class Source<
 						if (stateEvent.duration) {
 							duration = eventDurationSeconds - startOffset;
 						}
-						
-						// Calculate the event's time boundaries
-						const eventStartTime = eventStartTimeSeconds;
-						const eventEndTime = eventStartTime + (eventDurationSeconds || Infinity);
-						const currentTransportTime = this.context.transport.seconds;
-						
-						// Check if we're already within this event's timespan
-						const isWithinEventBoundaries = 
-							currentTransportTime >= eventStartTime && 
-							currentTransportTime < eventEndTime &&
-							this._state.getValueAtTime(currentTransportTime) === "started";
-						
-						// Only start if we're not already playing this event
-						if (isWithinEventBoundaries) {
-							console.log(`[Tone][Source] Skipping restart - transport time ${currentTransportTime.toFixed(6)} is within event boundaries (${eventStartTime.toFixed(6)} to ${eventEndTime.toFixed(6)})`);
-							return;
-						}
-						
 						// if event is in the transport past then no need to start it as
 						// this will cause performance issues with audio being played very slowly 
 						// and jumping suddenly to the current transport time
-						if (eventEndTime > this.context.transport.seconds) {
-							console.log(`[Tone][Source] Starting event at time ${time.toFixed(6)}, offset: ${startOffset.toFixed(6)}, event timespan: (${eventStartTime.toFixed(6)} to ${eventEndTime.toFixed(6)})`);
+						const endTimeSeconds = eventStartTimeSeconds + eventDurationSeconds;
+						if (endTimeSeconds > this.context.transport.seconds) {
 							this._start(
 								time,
-								stateEvent.offset !== undefined
-									? stateEvent.offset + startOffset
-									: startOffset,
+								this.toSeconds(stateEvent.offset) + startOffset,
 								duration
 							);
-						} else {
-							console.log(`[Tone][Source] Event fully in past, skipping - event timespan: (${eventStartTime.toFixed(6)} to ${eventEndTime.toFixed(6)}), current: ${currentTransportTime.toFixed(6)}`);
 						}
 					}
 				}
