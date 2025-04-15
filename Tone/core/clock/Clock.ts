@@ -155,9 +155,7 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		this._state.cancel(computedTime);
 		this._state.setStateAtTime("stopped", computedTime);
 		this._tickSource.stop(computedTime);
-		if (computedTime < this._lastUpdate) {
-			this.emit("stop", computedTime);
-		}
+		this.emit("stop", computedTime);
 		return this;
 	}
 
@@ -170,10 +168,8 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		if (this._state.getValueAtTime(computedTime) === "started") {
 			this._state.setStateAtTime("paused", computedTime);
 			this._tickSource.pause(computedTime);
-			if (computedTime < this._lastUpdate) {
-				// this.log("pause clock", computedTime);
-				this.emit("pause", computedTime);
-			}
+			// this.log("pause clock", computedTime);
+			this.emit("pause", computedTime);
 		}
 		return this;
 	}
