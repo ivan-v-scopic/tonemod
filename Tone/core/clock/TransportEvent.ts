@@ -44,6 +44,16 @@ export class TransportEvent {
 	 * This value is later added back when scheduling to get sub-tick precision.
 	 */
 	protected _remainderTime = 0;
+	
+	/**
+	 * Tracks the last time this event was invoked to prevent duplicate firings
+	 */
+	private _lastInvokedTime: number = -Infinity;
+	
+	/**
+	 * The minimum time in seconds that must pass before allowing an event to be invoked again
+	 */
+	private _dedupThreshold: number = 0.05; // 50ms threshold
 
 	/**
 	 * @param transport The transport object which the event belongs to
@@ -87,10 +97,19 @@ export class TransportEvent {
 	 */
 	invoke(time: Seconds): void {
 		if (this.callback) {
-			const tickDuration = this.transport.bpm.getDurationOfTicks(1, time);
-			this.callback(time + this._remainderTime * tickDuration);
-			if (this._once) {
-				this.transport.clear(this.id);
+			// Implement deduplication logic
+			const now = this.transport.now();
+			
+			// Only invoke if sufficient time has passed since last invocation
+			// or if this is the first invocation
+			if (now - this._lastInvokedTime > this._dedupThreshold) {
+				const tickDuration = this.transport.bpm.getDurationOfTicks(1, time);
+				this.callback(time + this._remainderTime * tickDuration);
+				this._lastInvokedTime = now;
+				
+				if (this._once) {
+					this.transport.clear(this.id);
+				}
 			}
 		}
 	}
