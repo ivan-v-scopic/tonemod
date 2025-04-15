@@ -363,7 +363,7 @@ export abstract class Source<
 						// this will cause performance issues with audio being played very slowly 
 						// and jumping suddenly to the current transport time
 						const endTimeSeconds = eventStartTimeSeconds + eventDurationSeconds;
-						if (endTimeSeconds > this.context.transport.seconds) {
+						if (eventStartTimeSeconds > this.context.transport.seconds) {
 							this._start(
 								time,
 								this.toSeconds(stateEvent.offset) + startOffset,
