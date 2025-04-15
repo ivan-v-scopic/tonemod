@@ -133,9 +133,7 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		if (this._state.getValueAtTime(computedTime) !== "started") {
 			this._state.setStateAtTime("started", computedTime);
 			this._tickSource.start(computedTime, offset);
-			if (computedTime < this._lastUpdate) {
-				this.emit("start", computedTime, offset);
-			}
+			this.emit("start", computedTime, offset);
 		}
 		return this;
 	}
