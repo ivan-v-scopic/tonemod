@@ -41,6 +41,11 @@ export class Clock extends ToneWithContext {
          */
         this._state = new StateTimeline("stopped");
         /**
+         * Track start events that have been directly emitted from start() method
+         * to avoid duplicating them in _loop()
+         */
+        this._emittedStartEvents = new Map();
+        /**
          * Context bound reference to the _loop method
          * This is necessary to remove the event in the end.
          */
@@ -88,6 +93,8 @@ export class Clock extends ToneWithContext {
             this._state.setStateAtTime("started", computedTime);
             this._tickSource.start(computedTime, offset);
             this.emit("start", computedTime, offset);
+            // Record that we've directly emitted this start event
+            this._emittedStartEvents.set(computedTime, true);
         }
         return this;
     }
@@ -202,8 +209,11 @@ export class Clock extends ToneWithContext {
             this._state.forEachBetween(startTime, endTime, (e) => {
                 switch (e.state) {
                     case "started":
-                        const offset = this._tickSource.getTicksAtTime(e.time);
-                        this.emit("start", e.time, offset);
+                        // Only emit start if we haven't directly emitted it already
+                        if (!this._emittedStartEvents.has(e.time)) {
+                            const offset = this._tickSource.getTicksAtTime(e.time);
+                            this.emit("start", e.time, offset);
+                        }
                         break;
                     case "stopped":
                         if (e.time !== 0) {
@@ -215,6 +225,12 @@ export class Clock extends ToneWithContext {
                         break;
                 }
             });
+            // Clear old emitted events to prevent memory leaks
+            for (const [time] of this._emittedStartEvents) {
+                if (time < startTime) {
+                    this._emittedStartEvents.delete(time);
+                }
+            }
             // the tick callbacks
             this._tickSource.forEachTickBetween(startTime, endTime, (time, ticks) => {
                 this.callback(time, ticks);
@@ -242,6 +258,7 @@ export class Clock extends ToneWithContext {
         this.context.off("tick", this._boundLoop);
         this._tickSource.dispose();
         this._state.dispose();
+        this._emittedStartEvents.clear();
         return this;
     }
 }

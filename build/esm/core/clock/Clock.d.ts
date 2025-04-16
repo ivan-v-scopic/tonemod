@@ -44,6 +44,11 @@ export declare class Clock<TypeName extends "bpm" | "hertz" = "hertz"> extends T
      */
     private _state;
     /**
+     * Track start events that have been directly emitted from start() method
+     * to avoid duplicating them in _loop()
+     */
+    private _emittedStartEvents;
+    /**
      * Context bound reference to the _loop method
      * This is necessary to remove the event in the end.
      */
