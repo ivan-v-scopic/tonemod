@@ -43,6 +43,7 @@ export class TransportClass extends ToneWithContext {
         const options = optionsFromArguments(TransportClass.getDefaults(), arguments);
         super(options);
         this.name = "Transport";
+        this._lastProcessedTick = -1;
         //-------------------------------------
         // 	LOOPING
         //-------------------------------------
@@ -117,6 +118,15 @@ export class TransportClass extends ToneWithContext {
      * @param  tickTime clock relative tick time
      */
     _processTick(tickTime, ticks) {
+        // Check for missed ticks (gaps in the sequence)
+        if (this._lastProcessedTick !== -1 && ticks > this._lastProcessedTick + 1) {
+            const missedTicks = ticks - this._lastProcessedTick - 1;
+            console.warn(`[MISSED TICKS] Transport: ${missedTicks} ticks were skipped`, {
+                lastTick: this._lastProcessedTick,
+                currentTick: ticks,
+                timeSinceLast: tickTime - this._clock.getTimeOfTick(this._lastProcessedTick)
+            });
+        }
         // do the loop test
         if (this._loop.get(tickTime)) {
             if (ticks >= this._loopEnd) {
@@ -147,6 +157,8 @@ export class TransportClass extends ToneWithContext {
             // }
         });
         enterScheduledCallback(false);
+        // Update last processed tick
+        this._lastProcessedTick = ticks;
     }
     //-------------------------------------
     // 	SCHEDULABLE EVENTS

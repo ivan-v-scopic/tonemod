@@ -41,6 +41,7 @@ type TransportCallback = (time: Seconds) => void;
  */
 export declare class TransportClass extends ToneWithContext<TransportOptions> implements Emitter<TransportEventNames> {
     readonly name: string;
+    private _lastProcessedTick;
     /**
      * If the transport loops or not.
      */
