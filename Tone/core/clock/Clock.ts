@@ -64,7 +64,7 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 
 	/**
 	 * Track start events that have been directly emitted from start() method
-	 * to avoid duplicating them in _loop()
+	 * to avoid duplicating them in _loop() - duplicated playbacks
 	 */
 	private _emittedStartEvents: Map<number, boolean> = new Map();
 
@@ -139,8 +139,16 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		if (this._state.getValueAtTime(computedTime) !== "started") {
 			this._state.setStateAtTime("started", computedTime);
 			this._tickSource.start(computedTime, offset);
+
+			// This was causing race conditions where if the next loop iteration doesn't
+			// happen before the scheduled time - the event goes into a "gap" and is never emitted
+			// if (computedTime < this._lastUpdate) {
+			// 	this.emit("start", computedTime, offset);
+			// }
+
+			// We need to emit the start event here immediately and record it so
+			// that we don't emit it again in the _loop
 			this.emit("start", computedTime, offset);
-			// Record that we've directly emitted this start event
 			this._emittedStartEvents.set(computedTime, true);
 		}
 		return this;
@@ -163,6 +171,12 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		this._state.cancel(computedTime);
 		this._state.setStateAtTime("stopped", computedTime);
 		this._tickSource.stop(computedTime);
+
+		// See comment in start()
+		// if (computedTime < this._lastUpdate) {
+		// 	this.emit("stop", computedTime);
+		// }
+
 		this.emit("stop", computedTime);
 		return this;
 	}
@@ -176,6 +190,13 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 		if (this._state.getValueAtTime(computedTime) === "started") {
 			this._state.setStateAtTime("paused", computedTime);
 			this._tickSource.pause(computedTime);
+
+			// See comment in start()
+			// if (computedTime < this._lastUpdate) {
+			// 	// this.log("pause clock", computedTime);
+			// 	this.emit("pause", computedTime);
+			// }
+
 			// this.log("pause clock", computedTime);
 			this.emit("pause", computedTime);
 		}
@@ -270,7 +291,7 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 			this._state.forEachBetween(startTime, endTime, (e) => {
 				switch (e.state) {
 					case "started":
-						// Only emit start if we haven't directly emitted it already
+						// Only emit start if we haven't directly emitted it already in start()
 						if (!this._emittedStartEvents.has(e.time)) {
 							const offset = this._tickSource.getTicksAtTime(e.time);
 							this.emit("start", e.time, offset);
@@ -286,7 +307,7 @@ export class Clock<TypeName extends "bpm" | "hertz" = "hertz">
 						break;
 				}
 			});
-			// Clear old emitted events to prevent memory leaks
+			// Clear old emitted events
 			for (const [time] of this._emittedStartEvents) {
 				if (time < startTime) {
 					this._emittedStartEvents.delete(time);
