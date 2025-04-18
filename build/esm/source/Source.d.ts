@@ -32,7 +32,6 @@ export declare abstract class Source<Options extends SourceOptions> extends Tone
      * The output volume node
      */
     private _volume;
-    private _expectedEvents;
     /**
      * The output node
      */

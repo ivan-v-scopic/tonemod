@@ -28,8 +28,6 @@ import { GT } from "../core/util/Math.js";
 export class Source extends ToneAudioNode {
     constructor(options) {
         super(options);
-        // debug = true;
-        this._expectedEvents = new Map();
         /**
          * Sources have no inputs
          */
@@ -246,32 +244,7 @@ export class Source extends ToneAudioNode {
             this._synced = true;
             this._syncedStart = (time, offset) => {
                 var _a;
-                // Record that we expect an event at this time
-                this._expectedEvents.set(time, {
-                    time,
-                    offset,
-                    handled: false,
-                    state: this.state
-                });
-                // After normal processing, check if the event was handled
-                setTimeout(() => {
-                    const event = this._expectedEvents.get(time);
-                    if (event && !event.handled && this.state !== "started") {
-                        console.warn(`[MISSED START] Source ${this._id}: Expected start event not handled`, {
-                            scheduledTime: time,
-                            currentTime: this.now(),
-                            transportTime: this.context.transport.seconds,
-                            sourceState: this.state
-                        });
-                    }
-                    this._expectedEvents.delete(time);
-                }, Math.max(1000, (time - this.now()) * 1000 + 100));
                 if (GT(offset, 0)) {
-                    // Mark this event as handled when we actually process it
-                    const evt = this._expectedEvents.get(time);
-                    if (evt) {
-                        evt.handled = true;
-                    }
                     // get the playback state at that time
                     const stateEvent = this._state.get(offset);
                     // listen for start events which may occur in the middle of the sync'ed time
