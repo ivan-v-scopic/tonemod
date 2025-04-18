@@ -158,7 +158,17 @@ export class Source extends ToneAudioNode {
                         : undefined;
                 }
                 const sched = this.context.transport.schedule((t) => {
-                    this._start(t, offset, duration);
+                    // NOTE: this callback is invoked when scheduled start time comes
+                    // this is a fix for race condition when the transport is paused ~exactly at the scheduled start time 
+                    // which leads to the source/player starting and plays the full audio instead of being silent
+                    // the fix is to check the transport state before starting the source
+                    // this.log("source -> transport.scheduled start:", this._id, t);
+                    if (this.state === "started") {
+                        this._start(t, offset, duration);
+                    }
+                    else {
+                        this.log(">>> [source.start] BLOCKED: transport.state !== 'started':", this.state, t, this._id);
+                    }
                 }, computedTime);
                 this._scheduled.push(sched);
                 // if the transport is already started
