@@ -93,8 +93,6 @@ export class TransportClass
 {
 	readonly name: string = "Transport";
 
-	private _lastProcessedTick: Ticks = -1;
-
 	//-------------------------------------
 	// 	LOOPING
 	//-------------------------------------
@@ -236,16 +234,6 @@ export class TransportClass
 	 * @param  tickTime clock relative tick time
 	 */
 	private _processTick(tickTime: Seconds, ticks: Ticks): void {
-		// Check for missed ticks (gaps in the sequence)
-		if (this._lastProcessedTick !== -1 && ticks > this._lastProcessedTick + 1) {
-			const missedTicks = ticks - this._lastProcessedTick - 1;
-			console.warn(`[MISSED TICKS] Transport: ${missedTicks} ticks were skipped`, {
-				lastTick: this._lastProcessedTick,
-				currentTick: ticks,
-				timeSinceLast: tickTime - this._clock.getTimeOfTick(this._lastProcessedTick)
-			});
-		}
-
 		// do the loop test
 		if (this._loop.get(tickTime)) {
 			if (ticks >= this._loopEnd) {
@@ -289,9 +277,6 @@ export class TransportClass
 			});
 		
 		enterScheduledCallback(false);
-
-		// Update last processed tick
-		this._lastProcessedTick = ticks;
 	}
 
 	//-------------------------------------

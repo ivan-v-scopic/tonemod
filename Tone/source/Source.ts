@@ -54,13 +54,6 @@ export abstract class Source<
 
 	// debug = true;
 
-	private _expectedEvents: Map<number, {
-		time: number;
-		offset: number;
-		handled: boolean;
-		state: string;
-	}> = new Map();
-
 	/**
 	 * The output node
 	 */
@@ -348,35 +341,7 @@ export abstract class Source<
 		if (!this._synced) {
 			this._synced = true;
 			this._syncedStart = (time, offset) => {
-				// Record that we expect an event at this time
-				this._expectedEvents.set(time, {
-					time,
-					offset,
-					handled: false,
-					state: this.state
-				});
-				
-				// After normal processing, check if the event was handled
-				setTimeout(() => {
-					const event = this._expectedEvents.get(time);
-					if (event && !event.handled && this.state !== "started") {
-						console.warn(`[MISSED START] Source ${this._id}: Expected start event not handled`, {
-							scheduledTime: time,
-							currentTime: this.now(),
-							transportTime: this.context.transport.seconds,
-							sourceState: this.state
-						});
-					}
-					this._expectedEvents.delete(time);
-				}, Math.max(1000, (time - this.now()) * 1000 + 100));
-
 				if (GT(offset, 0)) {
-					// Mark this event as handled when we actually process it
-					const evt = this._expectedEvents.get(time);
-					if (evt) {
-						evt.handled = true;
-					}
-
 					// get the playback state at that time
 					const stateEvent = this._state.get(offset);
 					// listen for start events which may occur in the middle of the sync'ed time
